@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data.SqlClient;
 
 namespace ProgrammingChallenge
@@ -7,8 +6,10 @@ namespace ProgrammingChallenge
     class Program
     {
 
-        public class QueryResults
+        private class QueryResults
         {
+            public string formattedStartDate { get; set; }
+            public string formattedEndDate { get; set; }
             public string zipCode { get; set; }
             public string zip_avgDollarPerTransaction { get; set; }
             public int zip_numTransactions { get; set; }
@@ -37,6 +38,8 @@ namespace ProgrammingChallenge
                     string startDate = "";
                     string endDate = "";
 
+                    QueryResults result = new QueryResults();
+
                     bool zipChecks = true;
 
                     while (zipChecks)
@@ -58,6 +61,7 @@ namespace ProgrammingChallenge
                                     startDate = "";
                                 }
                             }
+                            result.formattedStartDate = DateTime.Parse(startDate).ToString().Split(' ')[0];
 
                             while (endDate == "")
                             {
@@ -75,6 +79,8 @@ namespace ProgrammingChallenge
                                     endDate = "";
                                 }
                             }
+                            result.formattedEndDate = DateTime.Parse(endDate).ToString().Split(' ')[0];
+
                             Console.WriteLine("\nCollecting Sales Data...");
 
                             String atvPerZipcodeQuery = "SELECT A.PostalCode, " +
@@ -98,17 +104,16 @@ namespace ProgrammingChallenge
 
                                 if (sqlDataReader_Zipcode.Read())
                                 {
-                                    QueryResults result = new QueryResults
-                                    {
-                                        zipCode = sqlDataReader_Zipcode.GetString(0),
-                                        zip_avgDollarPerTransaction = String.Format("{0:0.00}", sqlDataReader_Zipcode.GetDecimal(1)),
-                                        zip_numTransactions = sqlDataReader_Zipcode.GetInt32(2)
-                                    };
 
+                                    result.zipCode = sqlDataReader_Zipcode.GetString(0);
+                                    result.zip_avgDollarPerTransaction = String.Format("{0:0.00}", sqlDataReader_Zipcode.GetDecimal(1));
+                                    result.zip_numTransactions = sqlDataReader_Zipcode.GetInt32(2);
                                     result.territoryID = sqlDataReader_Zipcode.GetInt32(3);
 
                                     sqlDataReader_Zipcode.Close();
 
+                                    Console.WriteLine("\nDate range of data: " + result.formattedStartDate +
+                                        " - " + result.formattedEndDate);
                                     Console.WriteLine("\nResults for zipcode " + result.zipCode + ":");
                                     Console.WriteLine("\tAverage Dollar Per Transaction: $" + result.zip_avgDollarPerTransaction);
                                     Console.WriteLine("\tTotal Number of Transactions: " + result.zip_numTransactions);
@@ -148,7 +153,8 @@ namespace ProgrammingChallenge
                                 {
                                     sqlDataReader_Zipcode.Close();
 
-                                    Console.WriteLine("\nNo data could be found for the zipcode " + zipcode + ".");
+                                    Console.WriteLine("\nNo data could be found for the zipcode " + zipcode + 
+                                        " from " + result.formattedStartDate + " to " + result.formattedEndDate + ".");
 
                                     string resp = "";
                                     while (resp == "")
@@ -196,6 +202,8 @@ namespace ProgrammingChallenge
                                 {
                                     dateChecks = false;
                                     zipcode = "";
+                                    startDate = "";
+                                    endDate = "";
                                     continue;
                                 }
                                 else if (response == "q")
@@ -221,7 +229,7 @@ namespace ProgrammingChallenge
                 Console.WriteLine(e.ToString());
             }
 
-            Console.WriteLine("Press any key to finish...");
+            Console.WriteLine("\nPress any key to finish...");
             Console.ReadKey(true);
         }
 
@@ -234,12 +242,12 @@ namespace ProgrammingChallenge
             }
             else if(DateTime.Compare(result, DateTime.Parse("1753-01-01")) < 0){
                 Console.WriteLine("\nDates need to be after January 1st, 1753." +
-                    "\nPlease pick a later date than " + result + ".");
+                    "\nPlease pick a later date than " + result.ToString().Split(' ')[0] + ".");
                 return false;
             }
             else if (DateTime.Compare(result, DateTime.Now) > 0)
             {
-                Console.WriteLine("\nDates after today's date (" + DateTime.Now.ToString() + 
+                Console.WriteLine("\nDates after today's date (" + DateTime.Now.ToString().Split(' ')[0] + 
                     ") will not return data.\nPlease choose a suitable date range.");
                 return false;
             }
